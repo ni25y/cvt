@@ -45,17 +45,17 @@ public class Main {
 
 
 
-    public String refMatcher(Matcher ref_matcher) {
+    public JSONArray refMatcher(String title, String reportId) {
         //String title = "";
 
-        while (ref_matcher.find()) {
+        //while (ref_matcher.find()) {
             // Find the title without modifying the input
             //Pattern title_pattern = Pattern.compile("^(.*?)");
             //Matcher title_matcher = title_pattern.matcher(input.substring(ref_matcher.start()));
 
             //if (title_matcher.find()) {
-                String title = ref_matcher.group(1);
-                input = input.substring(ref_matcher.end());
+                //String title = ref_matcher.group(1);
+                //input = input.substring(ref_matcher.end());
 
 
                 //ref_matcher.reset(input);
@@ -65,7 +65,7 @@ public class Main {
 
             // Process the title
             //if (!title.isEmpty()) {
-                indexArray.add(ref_matcher.start());
+                //indexArray.add(ref_matcher.start());
                 JSONObject textOutput = new JSONObject();
                 textOutput.put("type", "text");
                 textOutput.put("value", title);
@@ -78,7 +78,7 @@ public class Main {
                 JSONObject titleObject = new JSONObject();
                 JSONObject submitTime = new JSONObject();
 
-                urlLink.put("url", ref_matcher.group(2)); // Add the URL to the urlLink object
+                urlLink.put("url", reportId); // Add the URL to the urlLink object
                 titleObject.put("title", title); // Extract the report ID as the title
                 submitTime.put("submission time", "a time");
 
@@ -86,16 +86,17 @@ public class Main {
                 source.add(titleObject);
                 source.add(submitTime);
                 refOutput.put("type", "ref");
-                refOutput.put("value", source);
+                refOutput.put("value", reportId);
                 output.add(refOutput);
-                System.out.println("input in ref"+input);
-            ref_matcher.reset(input);
-            input = ref_matcher.replaceFirst("");
-            ref_matcher.reset(input);
+              //  System.out.println("input in ref"+input);
+            //ref_matcher.reset(input);
+          //  input = ref_matcher.replaceFirst("");
+          //  ref_matcher.reset(input);
             //}
+        return output;
         }
-        return input;
-    }
+       // return input;
+
 
 
 
@@ -106,7 +107,7 @@ public class Main {
     public String tableMatcher(Matcher table_matcher) {
 
         while (table_matcher.find()) {
-            indexArray.add(table_matcher.start());
+            //indexArray.add(table_matcher.start());
             JSONObject tableOutput = new JSONObject(); // Create new tableOutput object for each match
             tableOutput.put("type", "table");
             tableOutput.put("value", table_matcher.group(1));
@@ -121,7 +122,7 @@ public class Main {
 
     public String textMatcher(Matcher text_matcher) {
         while (text_matcher.find()) {
-            indexArray.add(text_matcher.start());
+            //indexArray.add(text_matcher.start());
             JSONObject textOutput = new JSONObject(); // Create new textOutput object for each match
             textOutput.put("type", "text");
             textOutput.put("value", text_matcher.group(1));
@@ -133,28 +134,90 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        String input = "茅台最新研报[report-id:1][report-id:2],{table:[h1,h2，h3],[t1,t2,t3]},显示股价太高了。{table:[h1,h2],[t1,t2]}";
+        String input = "茅台最新研报[report-id:1]{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。";
         Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
         Pattern table_pattern = Pattern.compile("\\{table:(.*?)}");
-        Main test1 = new Main(input);
+        //Main test1 = new Main(input);
+        JSONArray output = new JSONArray();
         while(input.length()>0){
             System.out.println("input = "+ input);
             Matcher ref_matcher = ref_pattern.matcher(input);
-            System.out.println(ref_matcher.find());
-            int ref_start = ref_matcher.start();
-            Matcher table_matcher = table_pattern.matcher(input);
-            System.out.println(table_matcher.find());
-            int table_start = table_matcher.start();
-            if(ref_start<table_start){
-                String title = input.substring(0,ref_start);
-                input = input.substring(ref_matcher.end());
-                String reportId = ref_matcher.group(1);
-                ref_matcher.reset(input);
-                System.out.println("text="+title+"ref : "+reportId +" output="+input);
-            }else {
+            int ref_start = 0;
+            Boolean refExist = false;
+            if(ref_matcher.find()){
+                refExist = true;
+                ref_start = ref_matcher.start();
+            }
 
+            Matcher table_matcher = table_pattern.matcher(input);
+            int table_start = 0;
+            Boolean tableExist = false;
+            if (table_matcher.find()){
+                tableExist = true;
+                table_start = table_matcher.start();
+            }
+            //System.out.println(table_matcher.find());
+            //int table_start = table_matcher.start();
+            if((ref_start<table_start)&&(refExist)){
+                String title = input.substring(0,ref_start);
+                String reportId = ref_matcher.group(1);
+                JSONObject textOutput = new JSONObject();
+                textOutput.put("type", "text");
+                textOutput.put("value", title);
+                System.out.println(textOutput);
+                output.add(textOutput);
+
+                JSONArray source = new JSONArray();
+                JSONObject refOutput = new JSONObject();
+                JSONObject urlLink = new JSONObject();
+                JSONObject titleObject = new JSONObject();
+                JSONObject submitTime = new JSONObject();
+
+                urlLink.put("url", reportId); // Add the URL to the urlLink object
+                titleObject.put("title", title); // Extract the report ID as the title
+                submitTime.put("submission time", "a time");
+
+                source.add(urlLink);
+                source.add(titleObject);
+                source.add(submitTime);
+                refOutput.put("type", "ref");
+                refOutput.put("value", reportId);
+                System.out.println(refOutput);
+                input = input.substring(ref_matcher.end());
+                output.add(refOutput);
+
+                ref_matcher.reset(input);
+
+
+                //System.out.println("text="+title+"ref : "+reportId +" output="+input);
+            }else if ((tableExist)&&table_start!=0){
+                JSONObject textOutput = new JSONObject(); // Create new textOutput object for each match
+                textOutput.put("type", "text");
+                textOutput.put("value", input.substring(ref_start,table_start));
+                input = input.substring(table_matcher.start());
+                table_matcher.reset(input);
+                System.out.println(textOutput);
+                output.add(textOutput);
+            }
+            else if (tableExist){
+                JSONObject tableOutput = new JSONObject(); // Create new tableOutput object for each match
+                tableOutput.put("type", "table");
+                tableOutput.put("value", table_matcher.group(1));
+                input = table_matcher.replaceFirst("");
+                table_matcher.reset(input);
+                System.out.println(tableOutput+"input is"+input);
+                output.add(tableOutput);
+
+            }else{
+                JSONObject textOutput = new JSONObject(); // Create new textOutput object for each match
+                textOutput.put("type", "text");
+                textOutput.put("value", input);
+                input = input.substring(0,0);
+                System.out.println(textOutput);
+                output.add(textOutput);
             }
         }
+        System.out.println(output);
 
         //Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
         //Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
