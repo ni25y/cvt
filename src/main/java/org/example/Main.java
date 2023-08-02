@@ -134,7 +134,17 @@ public class Main {
     }
 
     public static void main(String[] args) {
+
         String input = "茅台最新研报[report-id:1]{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。";
+        //input = "这是一段普通文本。";
+        //input = "这是一个引用符号[report-id:1]。";
+        input = "这是一个表格{table:[h1,h2],[t1,t2]}。";
+        input = "这是一段普通文本[report-id:1]，然后是另一段普通文本[report-id:2]。";
+        input = "这是一个表格{table:[h1,h2],[t1,t2]}，然后是另一个表格{table:[h3,h4],[t3,t4]}。";
+        input = "这是一段普通文本[report-id:1]，然后是一个表格{table:[h1,h2],[t1,t2]}，接着是另一段普通文本。";
+        input = "[report-id:1]饮用";
+        input = "{table:[h1,h2],[t1,t2]}[report-id:1][report-id:2]{table:[h1,h2,h3],[t1,t2,t3]}";
+
         Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
         Pattern table_pattern = Pattern.compile("\\{table:(.*?)}");
         //Main test1 = new Main(input);
@@ -142,22 +152,166 @@ public class Main {
         while(input.length()>0){
             System.out.println("input = "+ input);
             Matcher ref_matcher = ref_pattern.matcher(input);
-            int ref_start = 0;
-            Boolean refExist = false;
+            int ref_start = -1;
+            //Boolean refExist = false;
             if(ref_matcher.find()){
-                refExist = true;
                 ref_start = ref_matcher.start();
             }
 
             Matcher table_matcher = table_pattern.matcher(input);
-            int table_start = 0;
-            Boolean tableExist = false;
+            int table_start = -1;
+            //Boolean tableExist = false;
             if (table_matcher.find()){
-                tableExist = true;
+                //tableExist = true;
                 table_start = table_matcher.start();
             }
             //System.out.println(table_matcher.find());
             //int table_start = table_matcher.start();
+            if (ref_start<table_start) { // if ref is before table
+                if (ref_start > -1) { // if ref exists
+                    String title = input.substring(0, ref_start);
+                    String reportId = ref_matcher.group(1);
+                    if (ref_start > 0) { //if text exists before ref, extract text first
+
+                        JSONObject textOutput = new JSONObject();
+                        textOutput.put("type", "text");
+                        textOutput.put("value", title);
+                        System.out.println(textOutput);
+                        output.add(textOutput);
+                    } // extract ref
+                    JSONArray source = new JSONArray();
+                    JSONObject refOutput = new JSONObject();
+                    JSONObject urlLink = new JSONObject();
+                    JSONObject titleObject = new JSONObject();
+                    JSONObject submitTime = new JSONObject();
+
+                    urlLink.put("url", reportId); // Add the URL to the urlLink object
+                    titleObject.put("title", title); // Extract the report ID as the title
+                    submitTime.put("submission time", "a time");
+
+                    source.add(urlLink);
+                    source.add(titleObject);
+                    source.add(submitTime);
+                    refOutput.put("type", "ref");
+                    refOutput.put("value", source);
+                    System.out.println(refOutput);
+                    input = input.substring(ref_matcher.end());
+                    output.add(refOutput);
+
+                    ref_matcher.reset(input);
+                } else { // if ref not exist
+                    if (table_start > 0) { // if text exists before table, extract text first
+                        String text = input.substring(0, table_start);
+                        JSONObject textOutput = new JSONObject();
+                        textOutput.put("type", "text");
+                        textOutput.put("value", text);
+                        System.out.println(textOutput);
+                        output.add(textOutput);
+                    } //then extract table
+                    JSONObject tableOutput = new JSONObject(); // Create new tableOutput object for each match
+                    tableOutput.put("type", "table");
+                    tableOutput.put("value", table_matcher.group(1));
+                    input = input.substring(table_matcher.end());
+                    table_matcher.reset(input);
+                    System.out.println(tableOutput + "input is" + input);
+                    output.add(tableOutput);
+
+                }
+            }else if (ref_start>table_start){ //if table exists before ref
+                if (table_start>-1) { // if table exists
+                    if (table_start > 0) { // if text exists before table, extract text first
+                        String text = input.substring(0, table_start);
+                        //String reportId = ref_matcher.group(1);
+                        JSONObject textOutput = new JSONObject();
+                        textOutput.put("type", "text");
+                        textOutput.put("value", text);
+                        System.out.println(textOutput);
+                        output.add(textOutput);
+                    } //then extract table
+                    JSONObject tableOutput = new JSONObject(); // Create new tableOutput object for each match
+                    tableOutput.put("type", "table");
+                    tableOutput.put("value", table_matcher.group(1));
+                    input = input.substring(table_matcher.end());
+                    table_matcher.reset(input);
+                    System.out.println(tableOutput + "input is" + input);
+                    output.add(tableOutput);
+                }else { // if no table exists
+                    String title = input.substring(0, ref_start);
+                    String reportId = ref_matcher.group(1);
+                    if (ref_start > 0) { // if text exists before ref, extract text first
+
+                        //String reportId = ref_matcher.group(1);
+                        JSONObject textOutput = new JSONObject();
+                        textOutput.put("type", "text");
+                        textOutput.put("value", title);
+                        System.out.println(textOutput);
+                        output.add(textOutput);
+                    } //extract ref
+                    JSONArray source = new JSONArray();
+                    JSONObject refOutput = new JSONObject();
+                    JSONObject urlLink = new JSONObject();
+                    JSONObject titleObject = new JSONObject();
+                    JSONObject submitTime = new JSONObject();
+
+                    urlLink.put("url", reportId); // Add the URL to the urlLink object
+                    titleObject.put("title", title); // Extract the report ID as the title
+                    submitTime.put("submission time", "a time");
+
+                    source.add(urlLink);
+                    source.add(titleObject);
+                    source.add(submitTime);
+                    refOutput.put("type", "ref");
+                    refOutput.put("value", source);
+                    System.out.println(refOutput);
+                    input = input.substring(ref_matcher.end());
+                    output.add(refOutput);
+
+                    ref_matcher.reset(input);
+                }
+            }else{ //if no ref and table exist
+                String text = input;
+                JSONObject textOutput = new JSONObject();
+                textOutput.put("type", "text");
+                textOutput.put("value", text);
+
+                System.out.println(textOutput);
+                output.add(textOutput);
+                input = input.substring(0,0);
+            }
+            /**
+                }else if (ref_start>table_start){
+                    if (tableExist){
+                        if (table_start!=0){
+                            JSONObject textOutput = new JSONObject(); // Create new textOutput object for each match
+                            textOutput.put("type", "text");
+                            textOutput.put("value", input.substring(0,table_start));
+                            input = input.substring(table_matcher.start());
+                            table_matcher.reset(input);
+                            System.out.println(textOutput);
+                            output.add(textOutput);
+                        }
+                        JSONObject tableOutput = new JSONObject(); // Create new tableOutput object for each match
+                        tableOutput.put("type", "table");
+                        tableOutput.put("value", table_matcher.group(1));
+                        input = table_matcher.replaceFirst("");
+                        table_matcher.reset(input);
+                        System.out.println(tableOutput+"input is"+input);
+                        output.add(tableOutput);
+                        }else{
+                        JSONObject textOutput = new JSONObject(); // Create new textOutput object for each match
+                        textOutput.put("type", "text");
+                        textOutput.put("value", input.substring(0,ref_matcher.start()));
+                        input = input.substring(ref_matcher.end());
+                        System.out.println(textOutput);
+                        output.add(textOutput);
+                    }
+
+
+
+                        }
+                }
+            }
+            /**
             if((ref_start<table_start)&&(refExist)){
                 String title = input.substring(0,ref_start);
                 String reportId = ref_matcher.group(1);
@@ -181,7 +335,7 @@ public class Main {
                 source.add(titleObject);
                 source.add(submitTime);
                 refOutput.put("type", "ref");
-                refOutput.put("value", reportId);
+                refOutput.put("value", source);
                 System.out.println(refOutput);
                 input = input.substring(ref_matcher.end());
                 output.add(refOutput);
@@ -190,7 +344,7 @@ public class Main {
 
 
                 //System.out.println("text="+title+"ref : "+reportId +" output="+input);
-            }else if ((tableExist)&&table_start!=0){
+            }else if ((tableExist)&&(table_start!=0)){
                 JSONObject textOutput = new JSONObject(); // Create new textOutput object for each match
                 textOutput.put("type", "text");
                 textOutput.put("value", input.substring(ref_start,table_start));
@@ -217,6 +371,7 @@ public class Main {
                 output.add(textOutput);
             }
         }
+             **/
         System.out.println(output);
 
         //Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
@@ -240,5 +395,6 @@ public class Main {
         //System.out.println(test1.output);
         //System.out.println(input);
         System.out.println(test1.indexArray.toString());**/
+    }
     }
 }
