@@ -1,3 +1,4 @@
+/**
 package org.example;
 
 import com.alibaba.fastjson.JSONArray;
@@ -28,7 +29,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        Input input = new Input("茅台最新研报[report-id:1]{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。");
+        Input input = new Input("{table:[h1,h2],[t1,t2]}[report-id:1][report-id:2]{table:[h1,h2,h3],[t1,t2,t3]}");
         //input.setInput("茅台最新研报[report-id:1]{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。");
         input.getInput();
 
@@ -42,7 +43,7 @@ public class Main {
         input = "这是一段普通文本[report-id:1]，然后是一个表格{table:[h1,h2],[t1,t2]}，接着是另一段普通文本。";
         input = "[report-id:1]饮用";
         input = "{table:[h1,h2],[t1,t2]}[report-id:1][report-id:2]{table:[h1,h2,h3],[t1,t2,t3]}";
-**/
+
         Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
         Pattern table_pattern = Pattern.compile("\\{table:(.*?)}");
         //Main test1 = new Main(input);
@@ -120,13 +121,16 @@ public class Main {
             }else{ //if no ref and table exist
                 String text = input.getInput();
                 outputArray.add(output.getTitle("text",text));
-                input = new Input(null);
+                break;
             }
 
 
-            System.out.println(outputArray);
+
         }
+        System.out.println(outputArray);
 
 
     }
 }
+
+**/
