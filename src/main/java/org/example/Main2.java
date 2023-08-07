@@ -21,12 +21,11 @@ import static org.example.Main2.getRef;
  * @Date: 2023/8/4
  **/
 public class Main2 {
-    public static void getRef(int ref_start,String title, String reportId, ArrayList<Object> output ){
+    public static Input getRef(int ref_start,Input input, Matcher ref_matcher, ArrayList<Object> output ){
+        String title = input.substring(0, ref_start);
+        String reportId = ref_matcher.group(1);
         if (ref_start > 0) { //if text exists before ref, extract text first
-            Resp resp1 = new Resp();
-            resp1.setType(RespType.TEXT.getValue());
-            resp1.setValue(title);
-            output.add(resp1.getResp(resp1));
+            getText(title, output);
         } // extract ref
 
         Resp resp2 = new Resp();
@@ -35,124 +34,91 @@ public class Main2 {
         source.setUrl(reportId);
         source.setTitle(title);
         source.setSubmitTime(LocalDateTime.now());
-
         resp2.setValue(resp2.getRef(source));
         output.add(resp2.getResp(resp2));
-
+        input = new Input(input.getRest(ref_matcher.end()));
+        return input;
     }
 
-    public static void getTable(int table_start,String value,ArrayList<Object> output){
+    public static Input getTable(int table_start,Input  input,Matcher table_matcher,ArrayList<Object> output){
+        String title = input.substring(0, table_start);
+        String value = table_matcher.group(1);
         if (table_start > 0) { // if text exists before table, extract text first
-            Resp resp1 = new Resp();
-            resp1.setType(RespType.TEXT.getValue());
-            resp1.setValue(value);
-            output.add(resp1.getResp(resp1));
+            getText(title, output);
         } //then extract table
         Resp resp2 = new Resp();
         resp2.setType(RespType.TABLE.getValue());
         resp2.setValue(value);
         output.add(resp2.getResp(resp2));
+        input = new Input(input.getRest(table_matcher.end()));
+        return input;
     }
+
+    public static void getText(String title,ArrayList<Object> output){
+        Resp resp1 = new Resp();
+        resp1.setType(RespType.TEXT.getValue());
+        resp1.setValue(title);
+        output.add(resp1.getResp(resp1));
+    }
+
+    public static Integer getRef_start(Matcher ref_matcher){
+        int ref_start = -1;
+        //Boolean refExist = false;
+        if(ref_matcher.find()){
+            ref_start = ref_matcher.start();
+        }
+        return ref_start;
+    }
+
+    public static Integer getTable_start(Matcher table_matcher){
+        int table_start = -1;
+        //Boolean tableExist = false;
+        if (table_matcher.find()){
+            table_start = table_matcher.start();
+        }
+        return table_start;
+    }
+
+    public static Matcher refMatcher(Input input){
+        Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
+       return ref_pattern.matcher(input.getInput());
+    }
+
+    public static Matcher tableMatcher(Input input){
+        Pattern table_pattern = Pattern.compile("\\{table:(.*?)}");
+        return table_pattern.matcher(input.getInput());
+    }
+
+
     public static void main(String[] args) {
         Input input = new Input("茅台最新研报[report-id:3]{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。");
-
         ArrayList<Object> output= new ArrayList<>();
 
-        Pattern ref_pattern = Pattern.compile("\\[report-id:\\s*(\\d+)]");
-        Pattern table_pattern = Pattern.compile("\\{table:(.*?)}");
-
         while(input.getLength()>0){
-            Matcher ref_matcher = ref_pattern.matcher(input.getInput());
-            int ref_start = -1;
-            //Boolean refExist = false;
-            if(ref_matcher.find()){
-                ref_start = ref_matcher.start();
-            }
-
-            Matcher table_matcher = table_pattern.matcher(input.getInput());
-            int table_start = -1;
-            //Boolean tableExist = false;
-            if (table_matcher.find()){
-                //tableExist = true;
-                table_start = table_matcher.start();
-            }
+            Matcher ref_matcher = refMatcher(input);
+            Integer ref_start = getRef_start(ref_matcher);
+            Matcher table_matcher = tableMatcher(input);
+            Integer table_start = getTable_start(table_matcher);
 
             if (ref_start<table_start) { // if ref is before table
                 if (ref_start > -1) { // if ref exists
-                    String title = input.substring(0, ref_start);
-                    String reportId = ref_matcher.group(1);
-                    getRef(ref_start,title,reportId,output);
-                    input = new Input(input.getRest(ref_matcher.end()));
-                    ref_matcher.reset(input.getInput());
-
-                } else { // if ref not exist
-                    String title = input.substring(0, table_start);
-                    String value = table_matcher.group(1);
-                    getTable(table_start,value,output);
-
-                    input = new Input(input.getRest(table_matcher.end()));
-                    table_matcher.reset(input.getInput());
-
+                    input = getRef(ref_start,input,ref_matcher,output);
+                }else { // if ref not exist
+                    input = getTable(table_start,input,table_matcher,output);
                 }
             }else if (ref_start>table_start){ //if table exists before ref
                 if (table_start>-1) { // if table exists
-                    if (table_start > 0) { // if text exists before table, extract text first
-                        String title = input.substring(0, table_start);
-                        //String reportId = ref_matcher.group(1);
-                        Resp resp1 = new Resp();
-                        resp1.setType(RespType.TEXT.getValue());
-                        resp1.setValue(title);
-                        output.add(resp1.getResp(resp1));
-
-                    } //then extract table
-                    Resp resp2 = new Resp();
-                    resp2.setType(RespType.TABLE.getValue());
-                    resp2.setValue(table_matcher.group(1));
-                    output.add(resp2.getResp(resp2));
-
-
-                    input = new Input(input.getRest(table_matcher.end()));
-                    table_matcher.reset(input.getInput());
-
+                    input = getTable(table_start,input,table_matcher,output);
                 }else { // if no table exists
-                    String title = input.substring(0, ref_start);
-                    String reportId = ref_matcher.group(1);
-                    if (ref_start > 0) { // if text exists before ref, extract text first
-                        Resp resp1 = new Resp();
-
-                        resp1.setType(RespType.TEXT.getValue());
-                        resp1.setValue(title);
-                        output.add(resp1.getResp(resp1));
-                    } //extract ref
-                    Resp resp2 = new Resp();
-                    resp2.setType(RespType.REF.getValue());
-                    RefResp source = new RefResp();
-                    source.setUrl(reportId);
-                    source.setTitle(title);
-                    source.setSubmitTime(LocalDateTime.now());
-
-                    resp2.setValue(resp2.getRef(source));
-                    output.add(resp2.getResp(resp2));
-                    input = new Input(input.getRest(ref_matcher.end()));
-                    ref_matcher.reset(input.getInput());
-
+                    input = getRef(ref_start,input,ref_matcher,output);
                 }
             }else{ //if no ref and table exist
-                Resp resp1 = new Resp();
-                String title = input.getInput();
-                resp1.setType(RespType.TEXT.getValue());
-                resp1.setValue(title);
-                output.add(resp1.getResp(resp1));
+                getText(input.getInput(),output);
                 break;
             }
-            System.out.println(JSONArray.toJSONString(output));
-
-
-
+            ref_matcher.reset(input.getInput());
+            table_matcher.reset(input.getInput());
         }
         System.out.println(JSONArray.toJSONString(output));
-
-
-
     }
 }
