@@ -1,7 +1,5 @@
 package org.example;
 
-import com.alibaba.fastjson.JSONObject;
-
 /**
  * Copyright：©2023讯兔科技.该代码受知识产权法律保护.如有侵权，讯兔科技保留采用法律手段追究法律责任的权利。
  *
@@ -33,15 +31,19 @@ public class Resp {
         this.value = value;
     }
     public Object getResp(Resp response){
-        //public String getResp(Resp response){
         return response;
     }
-    //public String getResp(Resp response){
 
-    //    return JSONObject.toJSONString(response);
-    //}
 
-    public Object getRef(RefResp source){
+    public Object getRef(RefRespValue source){
         return source;
+    }
+
+    @Override
+    public String toString() {
+        return "Resp{" +
+                "type='" + type + '\'' +
+                ", value=" + value +
+                '}';
     }
 }
