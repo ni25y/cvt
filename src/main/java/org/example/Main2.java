@@ -85,7 +85,7 @@ public class Main2 {
                 output.add(getText(input.getInput()));
                 break;
             }else{
-                // 非纯文本 先处理特殊样式前的文本
+                // 非纯文本 根据顺序依次处理
                 String title = input.substring(0, startMatch.start());
                 if(title.length()!=0){
                     output.add(getText(title));
