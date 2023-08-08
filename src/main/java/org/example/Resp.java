@@ -35,9 +35,6 @@ public class Resp {
     }
 
 
-    public Object getRef(RefRespValue source){
-        return source;
-    }
 
     @Override
     public String toString() {

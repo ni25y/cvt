@@ -76,7 +76,7 @@ public class Main2 {
 
     public static void main(String[] args) {
 
-        Input input = new Input("茅台最新研报[report-id:3]{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。");
+        Input input = new Input("茅台最新研报[report-id:1][report-id:2],{table:[h1,h2,h3],[t1,t2,t3]},显示股价太高了[report-id:2],{table:[h1,h2],[t1,t2]}。");
         ArrayList<Object> output= new ArrayList<>();
         while(input.getLength()>0){
             Matcher startMatch = getStartMatch(input);
@@ -98,8 +98,8 @@ public class Main2 {
                 }
                 input = new Input(input.getRest(startMatch.end()));
             }
-            System.out.println(JSONArray.toJSONString(output));
-        }
 
+        }
+        System.out.println(JSONArray.toJSONString(output));
     }
 }
